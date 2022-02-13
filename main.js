@@ -6,6 +6,19 @@ let mousePosDiv = document.getElementById("mousePos");
 
 let collideButton = document.getElementById("collideButton");
 collideButton.addEventListener("click", collideAndDraw);
+let numCollidesPer = 1;
+let numCollideInput = document.getElementById("numCollideInput")
+numCollideInput.addEventListener("input", function() {
+	let value = parseInt(numCollideInput.value);
+	if (value < parseInt(numCollideInput.min)) {
+		numCollideInput.value = numCollideInput.min;
+	}
+	else if (value > parseInt(numCollideInput.max)) {
+		numCollideInput.value = numCollideInput.max;
+	}
+	numCollidesPer = numCollideInput.value;
+});
+
 
 function getCursorPosition(canvas, e) {
 	var rect = canvas.getBoundingClientRect();
@@ -22,12 +35,14 @@ function drawDot(ctx, x, y, r) {
 }
 
 function collideAndDraw() {
-	ctx.beginPath();
-	ctx.moveTo(p.x, p.y);
-	poly.collide(p)
-	ctx.lineTo(p.x, p.y);
-	ctx.stroke();
-	drawDot(ctx, p.x, p.y, 2);
+	for (let i=0; i<numCollidesPer; i++) {
+		ctx.beginPath();
+		ctx.moveTo(p.x, p.y);
+		poly.collide(p)
+		ctx.lineTo(p.x, p.y);
+		ctx.stroke();
+		drawDot(ctx, p.x, p.y, 2);
+	}
 }
 
 // Add event handlers for radio buttons
@@ -39,12 +54,12 @@ for (let i=0; i<modeSelect.length; i++) {
 	}
 }
 
-hoveredPointIndex = -1;
-
+let hoveredPointIndex = -1;
+let isOnParticle = false;
+let heldDownParticle = false;
 canvas.addEventListener("mousemove", function(e) {
 	let pos = getCursorPosition(canvas, e);
 	mousePosDiv.innerHTML = "x: " + pos[0] + ", y: " + pos[1];
-	renderFrame(currentMode, pos);
 	switch (currentMode) {
 		case "addVerticesMode":
 			let mouseWindowPos = [pos[0]+canvasBounds.left, pos[1]+canvasBounds.top];
@@ -70,11 +85,24 @@ canvas.addEventListener("mousemove", function(e) {
 				document.body.style.cursor = "default";
 			}
 			break;
+		case "moveParticleMode":
+			isOnParticle = dist([p.x, p.y], pos) < 10;
+			if (isOnParticle) {
+				document.body.style.cursor = "pointer";
+			}
+			else {
+				document.body.style.cursor = "default";
+			}
+			if (heldDownParticle) {
+				p.x = pos[0];
+				p.y = pos[1];
+			}
+			break;
 	}
-})
+	renderFrame(currentMode, pos);
+});
 
 
-poly = new Polygon([[100, 100], [400, 100], [400, 400], [100, 350]]);
 canvas.addEventListener("click", function(e) {
 	let pos = getCursorPosition(canvas, e);
 	switch (currentMode) {
@@ -89,7 +117,41 @@ canvas.addEventListener("click", function(e) {
 			
 	}
 	renderFrame(currentMode, pos);
-})
+});
+
+
+canvas.addEventListener("mousedown", function(e) {
+	let pos = getCursorPosition(canvas, e);
+	switch (currentMode) {
+		case "moveParticleMode":
+			if (isOnParticle) {
+				heldDownParticle = true;
+			}
+			else {
+				heldDownParticle = false;
+			}
+			break;
+	}
+	renderFrame(currentMode, pos);
+});
+
+canvas.addEventListener("mouseup", function(e) {
+	let pos = getCursorPosition(canvas, e);
+	switch (currentMode) {
+		case "moveParticleMode":
+			heldDownParticle = false;
+			break;
+	}
+	renderFrame(currentMode, pos);
+});
+
+canvas.addEventListener("mouseout", function(e) {
+	let pos = getCursorPosition(canvas, e);
+	hoveredPointIndex = -1;
+	isOnParticle = false;
+	heldDownParticle = false;
+	renderFrame(currentMode, pos);
+});
 //poly = new Polygon([[100, 100], [100, 400], [400, 400], [400, 100]]);
 //poly = new Polygon([[200, 100], [400, 100], [461.8, 290.2], [300, 407.8], [138.2, 290.2]]);
 poly = new Polygon([[100, 100], [400, 100], [400, 400], [100, 350]]);
@@ -99,7 +161,9 @@ p = new Particle(250, 200, 1, -3);
 function renderFrame(mode, pos) {
 	ctx.clearRect(0, 0, canvas.clientWidth, canvas.clientHeight);
 
-	drawDot(ctx, p.x, p.y, 2);
+	ctx.fillStyle = "blue";
+	drawDot(ctx, p.x, p.y, 5);
+	ctx.fillStyle = "black";
 	ctx.beginPath();
 	ctx.moveTo(p.x, p.y);
 	ctx.lineTo(p.x+p.vx*10, p.y+p.vy*10);
@@ -123,6 +187,15 @@ function renderFrame(mode, pos) {
 				ctx.fillStyle = "black";
 			}
 			break;
+		case "moveParticleMode":
+			if (heldDownParticle) {
+				ctx.fillStyle = "red";
+				drawDot(ctx, p.x, p.y, 10);
+				ctx.fillStyle = "black";
+			}
+			else if (isOnParticle) {
+				drawDot(ctx, p.x, p.y, 10);
+			}
 	}
 
 }
