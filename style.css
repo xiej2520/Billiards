@@ -1,3 +1,24 @@
 canvas {
 	border: 1px solid black;
 }
+
+#modeSelect input[type="radio"] {
+	display: none;
+}
+
+#modeSelect input[type="radio"]:checked+label {
+	background-color: #2B2;
+}
+
+#modeSelect label {
+	display: inline-block;
+	background-color: #888;
+	padding: 4px;
+}
+
+#modeSelect {
+	background-color: #EEE;
+	max-width: 500px;
+	margin: 5px;
+	padding: 10px;
+}

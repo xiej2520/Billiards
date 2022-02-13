@@ -10,8 +10,22 @@
 	<body>
 		<canvas id="canvas" width="800" height="600"></canvas>
 		<div id="mousePos"></div>
-		<input id="collideButton" type="button" value="Collide!"/>
-
+		<form id="modeSelect">
+			<input type="radio" name="mode" id="addVerticesMode" checked>
+			<label for="addVerticesMode">Add Vertex</label>
+			<input type="radio" name="mode" id="removeVerticesMode">
+			<label for="removeVerticesMode">Remove Vertex</label>
+			<input type="radio" name="mode" id="moveParticleMode">
+			<label for="moveParticleMode">Move Particle</label>
+			<input type="radio" name="mode" id="pointDirectionMode">
+			<label for="pointDirectionMode">Change Direction</label>
+		</form>
+		<form>
+			<input id="collideButton" type="button" value="Collide!"/>
+			<label for="numCollideInput">Number of times: </label>
+			<input id="numCollideInput" type="number" min="1" max="1000" value="1"/>
+			<input id="clearPathButton" type="button" value="Clear Paths"/>
+		</form>
 
 		<script src="main.js"></script>
 	</body>

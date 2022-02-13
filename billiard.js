@@ -33,30 +33,56 @@ class Polygon extends Shape {
 		this.ptArray = ptArray;
 	}
 
+	/**
+	 * Collides a particle with the polygon.
+	 * Particle's position and velocity is modified by the collision.
+	 * @param {*} particle collides with polygon.
+	 * @returns position of collision.
+	 */
 	collide(particle) {
 		let prevPoint = this.ptArray[this.ptArray.length-1]
+		let intersections = []
 		for (const point of this.ptArray) {
 			// prevPoint -- point is a side
+			// checks if particle will collide with side
 			let result = particle.intersectLineSegment(prevPoint, point)
 			if (result[0] == true) {
-				let lineAngle = Math.atan2(point[1]-prevPoint[1], point[0]-prevPoint[0]);
-				// positive angle
-				lineAngle = ((lineAngle % (2*Math.PI)) + 2*Math.PI) % (2*Math.PI);
-				let particleAngle = Math.atan2(particle.vy, particle.vx);
-				let incidence = particleAngle - lineAngle;
-				let reflectedAngle = lineAngle - incidence;
-
-				particle.x = result[1][0];
-				particle.y = result[1][1];
-				let velocity = Math.sqrt(particle.vx ** 2 + particle.vy ** 2);
-				particle.vx = velocity * Math.cos(reflectedAngle);
-				particle.vy = velocity * Math.sin(reflectedAngle);
-				return [particle.x, particle.y];
+				// collision location, then two points defining side
+				intersections.push([result[1], prevPoint, point]);
 			}
-			else {
-				prevPoint = point;
-			}
+			prevPoint = point;
 		}
+
+		// find first side that particle collides with (concave polygons)
+		if (intersections.length > 0) {
+			let minDistIndex = 0;
+			let minDist = dist(intersections[0][0], [particle.x, particle.y]);
+			for (let i=1; i<intersections.length; i++) {
+				let thisDist = dist(intersections[i][0], [particle.x, particle.y])
+				if (thisDist < minDist) {
+					minDistIndex = i;
+					minDist = thisDist;
+				}
+			}
+			let correctCollision = intersections[minDistIndex];
+			let lineAngle = Math.atan2(correctCollision[2][1]-correctCollision[1][1], correctCollision[2][0]-correctCollision[1][0]);
+			// positive angle
+			lineAngle = ((lineAngle % (2*Math.PI)) + 2*Math.PI) % (2*Math.PI);
+			let particleAngle = Math.atan2(particle.vy, particle.vx);
+			let incidence = particleAngle - lineAngle;
+			let reflectedAngle = lineAngle - incidence;
+
+			particle.x = correctCollision[0][0];
+			particle.y = correctCollision[0][1];
+			let velocity = Math.sqrt(particle.vx ** 2 + particle.vy ** 2);
+			particle.vx = velocity * Math.cos(reflectedAngle);
+			particle.vy = velocity * Math.sin(reflectedAngle);
+			return [particle.x, particle.y];
+		}
+		else {
+			return [];
+		}
+		
 	}
 
 	draw(ctx) {
@@ -68,11 +94,15 @@ class Polygon extends Shape {
 			ctx.moveTo(prevPoint[0], prevPoint[1]);
 			ctx.lineTo(point[0], point[1]);
 			ctx.stroke();
+			ctx.beginPath();
+			ctx.arc(point[0], point[1], 5, 0, 360);
+			ctx.fill();
 			prevPoint = point;
 		}
 	}
 
 }
+
 
 class Particle {
 	constructor(x, y, vx, vy) {
@@ -82,8 +112,14 @@ class Particle {
 		this.vy = vy;
 	}
 	
+	/**
+	 * Computes the intersection of the particle with a given line segment.
+	 * @param {*} pt1 first point defining line segment.
+	 * @param {*} pt2 second point defining line segment.
+	 * @returns array with truth value for collision, 
+	 * 		if true then also includes position of collision.
+	 */
 	intersectLineSegment(pt1, pt2) {
-		console.log("Line segment: ", pt1, pt2);
 		// line segment isn't vertical
 		if (pt1[0] != pt2[0]) {
 			let m = (pt2[1] - pt1[1]) / (pt2[0] - pt1[0]);
@@ -123,7 +159,6 @@ class Particle {
 			if (this.vx != 0) { // not parallel
 				let v = this.vy / this.vx; // slope of particle path
 				let yIntersect = this.y + ((pt1[0] - this.x) * v);
-				console.log("Y int", yIntersect);
 				let bottomY = Math.min(pt1[1], pt2[1]);
 				let topY = Math.max(pt1[1], pt2[1]);
 				// intersects within line segment bounds
@@ -139,4 +174,8 @@ class Particle {
 	return [false];
 	}
 
+}
+
+function dist(pt1, pt2) {
+	return Math.sqrt((pt1[0] - pt2[0]) ** 2 + (pt1[1] - pt2[1]) ** 2);
 }
