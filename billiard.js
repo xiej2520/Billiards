@@ -53,8 +53,8 @@ class Polygon extends Shape {
 			prevPoint = point;
 		}
 
-		// find first side that particle collides with (concave polygons)
 		if (intersections.length > 0) {
+			// find first side that particle collides with (handle concave polygons)
 			let minDistIndex = 0;
 			let minDist = dist(intersections[0][0], [particle.x, particle.y]);
 			for (let i=1; i<intersections.length; i++) {
@@ -64,6 +64,7 @@ class Polygon extends Shape {
 					minDist = thisDist;
 				}
 			}
+			// calculate angle of collision
 			let correctCollision = intersections[minDistIndex];
 			let lineAngle = Math.atan2(correctCollision[2][1]-correctCollision[1][1], correctCollision[2][0]-correctCollision[1][0]);
 			// positive angle
@@ -72,6 +73,7 @@ class Polygon extends Shape {
 			let incidence = particleAngle - lineAngle;
 			let reflectedAngle = lineAngle - incidence;
 
+			// modify particle's location and new direction
 			particle.x = correctCollision[0][0];
 			particle.y = correctCollision[0][1];
 			let velocity = Math.sqrt(particle.vx ** 2 + particle.vy ** 2);
@@ -79,6 +81,7 @@ class Polygon extends Shape {
 			particle.vy = velocity * Math.sin(reflectedAngle);
 			return [particle.x, particle.y];
 		}
+		// no collision (handle this somewhere?)
 		else {
 			return [];
 		}
@@ -131,18 +134,18 @@ class Particle {
 
 					let leftX = Math.min(pt1[0], pt2[0]);
 					let rightX = Math.max(pt1[0], pt2[0])
+					let yIntersect = m * (xIntersect - pt2[0]) + pt2[1];
 					// intersects within line segment bounds
-					// and is in right direction (false when point is on segment already)
+					// and is in right direction
+					// and point is not already on line segment
 					if (leftX < xIntersect && xIntersect < rightX && 
-						(((xIntersect-this.x)/this.vx > 0.001) // right direction
-						|| (xIntersect-this.x)/this.vx > 0 && Math.abs((xIntersect-this.x)) > 0.1
-						)) { // fudge factor
+						(xIntersect-this.x)/this.vx > 0 && (Math.abs((xIntersect-this.x)) > 0.001
+						|| Math.abs((yIntersect-this.y)) > 0.001)
+						) { // fudge factor
 						// formula
-						let yIntersect = m * (xIntersect - pt2[0]) + pt2[1];
 						return [true, [xIntersect, yIntersect]];
 					}
 				}
-				// false when parallel and later intersecting line?
 			}
 			else { // particle is moving vertically
 				let leftX = Math.min(pt1[0], pt2[0]);

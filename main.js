@@ -34,6 +34,21 @@ function drawDot(ctx, x, y, r) {
 	ctx.fill();
 }
 
+function drawArrow(ctx, x, y, theta, length, headSize) {
+	ctx.beginPath();
+	ctx.moveTo(x, y);
+	let arrowHeadX = x+length*Math.cos(theta);
+	let arrowHeadY = y+length*Math.sin(theta);
+	ctx.lineTo(arrowHeadX, arrowHeadY);
+	ctx.stroke();
+	ctx.beginPath();
+	ctx.moveTo(arrowHeadX,arrowHeadY);
+	ctx.lineTo(arrowHeadX+headSize*0.577*Math.cos(theta+1.57), arrowHeadY+headSize*0.577*Math.sin(theta+1.57));
+	ctx.lineTo(arrowHeadX+headSize*Math.cos(theta), arrowHeadY+headSize*Math.sin(theta));
+	ctx.lineTo(arrowHeadX+headSize*0.577*Math.cos(theta-1.57), arrowHeadY+headSize*0.577*Math.sin(theta-1.57));
+	ctx.fill();
+}
+
 function collideAndDraw() {
 	for (let i=0; i<numCollidesPer; i++) {
 		ctx.beginPath();
@@ -154,9 +169,9 @@ canvas.addEventListener("mouseout", function(e) {
 });
 //poly = new Polygon([[100, 100], [100, 400], [400, 400], [400, 100]]);
 //poly = new Polygon([[200, 100], [400, 100], [461.8, 290.2], [300, 407.8], [138.2, 290.2]]);
-poly = new Polygon([[100, 100], [400, 100], [400, 400], [100, 350]]);
+poly = new Polygon([[100, 100], [400, 050], [400, 400], [100, 400]]);
 
-p = new Particle(250, 200, 1, -3);
+p = new Particle(150, 250, 0, 2);
 
 function renderFrame(mode, pos) {
 	ctx.clearRect(0, 0, canvas.clientWidth, canvas.clientHeight);
@@ -164,10 +179,7 @@ function renderFrame(mode, pos) {
 	ctx.fillStyle = "blue";
 	drawDot(ctx, p.x, p.y, 5);
 	ctx.fillStyle = "black";
-	ctx.beginPath();
-	ctx.moveTo(p.x, p.y);
-	ctx.lineTo(p.x+p.vx*10, p.y+p.vy*10);
-	ctx.stroke();
+	drawArrow(ctx, p.x, p.y, Math.atan2(p.vy, p.vx), 20, 10);
 
 	if (poly.ptArray.length > 0) {
 		poly.draw(ctx);
