@@ -34,6 +34,9 @@ function drawDot(ctx, x, y, r) {
 	ctx.fill();
 }
 
+const arrowLength = 20;
+const arrowHeadSize = 10;
+
 function drawArrow(ctx, x, y, theta, length, headSize) {
 	ctx.beginPath();
 	ctx.moveTo(x, y);
@@ -42,10 +45,13 @@ function drawArrow(ctx, x, y, theta, length, headSize) {
 	ctx.lineTo(arrowHeadX, arrowHeadY);
 	ctx.stroke();
 	ctx.beginPath();
-	ctx.moveTo(arrowHeadX,arrowHeadY);
-	ctx.lineTo(arrowHeadX+headSize*0.577*Math.cos(theta+1.57), arrowHeadY+headSize*0.577*Math.sin(theta+1.57));
-	ctx.lineTo(arrowHeadX+headSize*Math.cos(theta), arrowHeadY+headSize*Math.sin(theta));
-	ctx.lineTo(arrowHeadX+headSize*0.577*Math.cos(theta-1.57), arrowHeadY+headSize*0.577*Math.sin(theta-1.57));
+	ctx.moveTo(arrowHeadX, arrowHeadY);
+	pt1 = [arrowHeadX+headSize*0.577*Math.cos(theta+1.57), arrowHeadY+headSize*0.577*Math.sin(theta+1.57)];
+	pt2 = [arrowHeadX+headSize*Math.cos(theta), arrowHeadY+headSize*Math.sin(theta)];
+	pt3 = [arrowHeadX+headSize*0.577*Math.cos(theta-1.57), arrowHeadY+headSize*0.577*Math.sin(theta-1.57)];
+	ctx.lineTo(pt1[0], pt1[1]);
+	ctx.lineTo(pt2[0], pt2[1]);
+	ctx.lineTo(pt3[0], pt3[1]);
 	ctx.fill();
 }
 
@@ -72,6 +78,8 @@ for (let i=0; i<modeSelect.length; i++) {
 let hoveredPointIndex = -1;
 let isOnParticle = false;
 let heldDownParticle = false;
+let isOnArrowHead = false;
+let heldDownArrowHead = false;
 canvas.addEventListener("mousemove", function(e) {
 	let pos = getCursorPosition(canvas, e);
 	mousePosDiv.innerHTML = "x: " + pos[0] + ", y: " + pos[1];
@@ -113,6 +121,23 @@ canvas.addEventListener("mousemove", function(e) {
 				p.y = pos[1];
 			}
 			break;
+		case "pointDirectionMode":
+			theta =  Math.atan2(p.vy, p.vx);
+			let arrowHeadXCenter = p.x+arrowLength*Math.cos(theta);
+			let arrowHeadYCenter = p.y+arrowLength*Math.sin(theta);
+			isOnArrowHead = dist([arrowHeadXCenter, arrowHeadYCenter], pos) < 20;
+			if (isOnArrowHead) {
+				document.body.style.cursor = "pointer";
+			}
+			else {
+				document.body.style.cursor = "default";
+			}
+			if (heldDownArrowHead) {
+				let v = Math.sqrt(p.vx ** 2 + p.vy ** 2);
+				let theta = Math.atan2(pos[1] - p.y, pos[0]-p.x);
+				p.vx = Math.cos(theta) * v;
+				p.vy = Math.sin(theta) * v;
+			}
 	}
 	renderFrame(currentMode, pos);
 });
@@ -129,7 +154,7 @@ canvas.addEventListener("click", function(e) {
 				poly.ptArray.splice(hoveredPointIndex, 1);
 				hoveredPointIndex = -1;
 			}
-			
+			break;
 	}
 	renderFrame(currentMode, pos);
 });
@@ -142,8 +167,10 @@ canvas.addEventListener("mousedown", function(e) {
 			if (isOnParticle) {
 				heldDownParticle = true;
 			}
-			else {
-				heldDownParticle = false;
+			break;
+		case "pointDirectionMode":
+			if (isOnArrowHead) {
+				heldDownArrowHead = true;
 			}
 			break;
 	}
@@ -155,6 +182,9 @@ canvas.addEventListener("mouseup", function(e) {
 	switch (currentMode) {
 		case "moveParticleMode":
 			heldDownParticle = false;
+			break;
+		case "pointDirectionMode":
+			heldDownArrowHead = false;
 			break;
 	}
 	renderFrame(currentMode, pos);
@@ -179,7 +209,7 @@ function renderFrame(mode, pos) {
 	ctx.fillStyle = "blue";
 	drawDot(ctx, p.x, p.y, 5);
 	ctx.fillStyle = "black";
-	drawArrow(ctx, p.x, p.y, Math.atan2(p.vy, p.vx), 20, 10);
+	drawArrow(ctx, p.x, p.y, Math.atan2(p.vy, p.vx), arrowLength, arrowHeadSize);
 
 	if (poly.ptArray.length > 0) {
 		poly.draw(ctx);
@@ -207,6 +237,13 @@ function renderFrame(mode, pos) {
 			}
 			else if (isOnParticle) {
 				drawDot(ctx, p.x, p.y, 10);
+			}
+			break;
+		case "pointDirectionMode":
+			if (isOnArrowHead || heldDownArrowHead) {
+				ctx.fillStyle = "red";
+				drawArrow(ctx, p.x, p.y, Math.atan2(p.vy, p.vx), arrowLength, arrowHeadSize*2)
+				ctx.fillStyle = "black";
 			}
 	}
 
